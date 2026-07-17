@@ -28,10 +28,10 @@
                 .order('id', { ascending: false })
                 .limit(10);
 
-            if (error) {
-                console.error("Błąd połączenia:", error);
-                return;
-            }
+if (error) {
+    console.error("Błąd połączenia:", error);
+    return;
+}
 
             // Czyścimy chat i wstawiamy dane od najstarszej do najnowszej
             chatDiv.innerHTML = '';
