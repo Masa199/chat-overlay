@@ -1,11 +1,35 @@
 <!DOCTYPE html>
 <html>
 <body>
-    <h1 id="test">Testowanie strony...</h1>
+    <div id="status">Łączenie z bazą...</div>
+    <div id="chat"></div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        document.getElementById('test').innerText = "Skrypt działa!";
-        console.log("Skrypt się uruchomił");
+        const SUPABASE_URL = 'https://wkztgtxkyvknkproapdy.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndrenRndHhreXZrbmtwcm9hcGR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMTcwMzYsImV4cCI6MjA5OTg5MzAzNn0.cLwc-HEUmiduUatThWu92gfsCsqo0_mGEkdv5N2WctM';
+        
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const statusDiv = document.getElementById('status');
+        const chatDiv = document.getElementById('chat');
+
+        async function testPolaczenia() {
+            try {
+                const { data, error } = await supabase.from('chat').select('*').limit(1);
+                
+                if (error) {
+                    statusDiv.innerText = "BŁĄD: " + error.message;
+                } else {
+                    statusDiv.innerText = "Połączono! Dane w bazie: " + data.length;
+                    // Jeśli dane są, pokaż je
+                    chatDiv.innerText = JSON.stringify(data);
+                }
+            } catch (err) {
+                statusDiv.innerText = "Błąd krytyczny: " + err;
+            }
+        }
+
+        testPolaczenia();
     </script>
 </body>
 </html>
