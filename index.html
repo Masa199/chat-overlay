@@ -1,42 +1,54 @@
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-    // Wpisz tu swoje dane
-    const SUPABASE_URL = 'https://wkztgtxkyvknkproapdy.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndrenRndHhreXZrbmtwcm9hcGR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMTcwMzYsImV4cCI6MjA5OTg5MzAzNn0.cLwc-HEUmiduUatThWu92gfsCsqo0_mGEkdv5N2WctM';
-    
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    const chatDiv = document.getElementById('chat');
-    
-    // Zmienna do zapamiętywania ostatniego wiersza
-    let lastId = 0;
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Czat Supabase</title>
+    <style>
+        #chat { border: 1px solid #ccc; height: 300px; overflow-y: scroll; padding: 10px; }
+        .message { border-bottom: 1px solid #eee; padding: 5px; }
+    </style>
+</head>
+<body>
 
-    async function checkNewMessages() {
-        try {
-            // Pobieramy ostatni wpis z bazy
+    <div id="chat"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // 1. Wpisz tutaj swoje dane z Supabase (Project Settings -> API)
+        const SUPABASE_URL = 'https://wkztgtxkyvknkproapdy.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndrenRndHhreXZrbmtwcm9hcGR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMTcwMzYsImV4cCI6MjA5OTg5MzAzNn0.cLwc-HEUmiduUatThWu92gfsCsqo0_mGEkdv5N2WctM';
+        
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const chatDiv = document.getElementById('chat');
+
+        async function odswiezCzat() {
+            // Pobieramy ostatnie 10 wiadomości
             const { data, error } = await supabase
                 .from('chat')
                 .select('*')
                 .order('id', { ascending: false })
-                .limit(1);
+                .limit(10);
 
-            if (data && data.length > 0) {
-                const latest = data[0];
-                
-                // Jeśli ID w bazie jest większe niż to, które mamy, to znaczy, że jest coś nowego
-                if (latest.id > lastId) {
-                    lastId = latest.id;
-                    const div = document.createElement('div');
-                    div.className = 'message';
-                    div.textContent = latest.text;
-                    chatDiv.appendChild(div);
-                    chatDiv.scrollTop = chatDiv.scrollHeight;
-                }
+            if (error) {
+                console.error("Błąd połączenia:", error);
+                return;
             }
-        } catch (e) {
-            console.error("Błąd odczytu:", e);
-        }
-    }
 
-    // Uruchamiamy sprawdzanie co 2 sekundy
-    setInterval(checkNewMessages, 2000);
-</script>
+            // Czyścimy chat i wstawiamy dane od najstarszej do najnowszej
+            chatDiv.innerHTML = '';
+            data.reverse().forEach(row => {
+                const div = document.createElement('div');
+                div.className = 'message';
+                div.textContent = row.text;
+                chatDiv.appendChild(div);
+            });
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+        }
+
+        // Odświeżaj co 2 sekundy
+        setInterval(odswiezCzat, 2000);
+        
+        // Pierwsze uruchomienie
+        odswiezCzat();
+    </script>
+</body>
+</html>
