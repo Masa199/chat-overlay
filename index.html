@@ -5,102 +5,35 @@
     <title>Live Chat Overlay</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            background: transparent;
-            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-            overflow: hidden;
-            height: 100vh;
-            display: flex;
-            flex-direction: column; /* Zmiana na standardowy układ od góry do dołu */
-            padding: 10px;
-        }
-        #chat {
-            display: flex;
-            flex-direction: column; /* Starsze wiadomości u góry, nowe na dole */
-            gap: 6px;
-            height: 100%;
-            max-height: 100vh;
-            overflow-y: scroll; /* Włącza przewijanie w pionie */
-            padding: 4px;
-            scrollbar-width: none; /* Ukrywa pasek przewijania (Firefox) */
-            -ms-overflow-style: none; /* Ukrywa pasek przewijania (IE/Edge) */
-        }
-        /* Ukrywa pasek przewijania (Chrome/OBS/Safari) */
-        #chat::-webkit-scrollbar { 
-            display: none; 
-        }
-        .message {
-            background: rgba(0, 0, 0, 0.75);
-            backdrop-filter: blur(4px);
-            padding: 8px 14px;
-            border-radius: 10px;
-            border-left: 4px solid #00d4ff;
-            animation: fadeIn 0.25s ease forwards;
-            word-wrap: break-word;
-            word-break: break-word;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.4);
-            font-weight: 600;
-            font-size: 20px;
-            color: #ffffff;
-            text-shadow: 1px 1px 4px rgba(0,0,0,0.8);
-            line-height: 1.3;
-            max-width: 100%;
-            flex-shrink: 0; /* Zapobiega spłaszczaniu dymków przez CSS */
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(15px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        body { background: transparent; font-family: sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; padding: 10px; }
+        #chat { display: flex; flex-direction: column; gap: 6px; height: 100%; overflow-y: scroll; scrollbar-width: none; }
+        #chat::-webkit-scrollbar { display: none; }
+        .message { background: rgba(0, 0, 0, 0.75); padding: 8px 14px; border-radius: 10px; border-left: 4px solid #00d4ff; animation: fadeIn 0.25s ease forwards; color: #ffffff; font-size: 20px; margin-bottom: 5px; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
     <div id="chat"></div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // TUTAJ WKLEJ SWÓJ LINK DO FIREBASE (Z /chat.json NA KOŃCU)
-        const FIREBASE_URL = 'https://moj-czat-obs-default-rtdb.firebaseio.com/chat.json';
+        const SUPABASE_URL = 'WKLEJ_TU_SWOJ_URL';
+        const SUPABASE_KEY = 'WKLEJ_TU_SWOJ_ANON_KEY';
+        
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         const chatDiv = document.getElementById('chat');
 
-        function connectToFirebase() {
-            const eventSource = new EventSource(FIREBASE_URL, {
-                headers: { 'Accept': 'text/event-stream' }
-            });
-
-            eventSource.addEventListener('put', (event) => {
-                try {
-                    const data = JSON.parse(event.data);
-                    if (data && data.data && data.data.text) {
-                        createMessageElement(data.data.text);
-                    }
-                } catch (e) {
-                    console.error("Błąd:", e);
-                }
-            });
-
-            eventSource.onerror = () => {
-                eventSource.close();
-                setTimeout(connectToFirebase, 2000);
-            };
-        }
-
-        function createMessageElement(text) {
-            const div = document.createElement('div');
-            div.className = 'message';
-            div.textContent = text;
-            
-            // Dodajemy nową wiadomość na koniec listy (na dół okna)
-            chatDiv.appendChild(div);
-
-            // Automatyczne przewinięcie okna na sam dół, aby zawsze widzieć najnowszy tekst
-            chatDiv.scrollTop = chatDiv.scrollHeight;
-
-            // Zwiększamy limit do 100 wiadomości w pamięci, aby można było dużo przewijać wstecz
-            while (chatDiv.children.length > 100) {
-                chatDiv.removeChild(chatDiv.firstChild);
-            }
-        }
-
-        connectToFirebase();
+        // Nasłuchiwanie zmian w tabeli 'chat'
+        supabase.channel('public:chat')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat' }, payload => {
+                const div = document.createElement('div');
+                div.className = 'message';
+                div.textContent = payload.new.text;
+                chatDiv.appendChild(div);
+                chatDiv.scrollTop = chatDiv.scrollHeight;
+                if (chatDiv.children.length > 50) chatDiv.removeChild(chatDiv.firstChild);
+            })
+            .subscribe();
     </script>
 </body>
 </html>
