@@ -1,35 +1,55 @@
 <!DOCTYPE html>
 <html>
+<head>
+    <meta charset="UTF-8">
+    <title>Czat Supabase</title>
+</head>
 <body>
+
     <div id="status">Łączenie z bazą...</div>
     <div id="chat"></div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Biblioteka Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.0/dist/umd/supabase.js"></script>
+    
     <script>
+        // WPISZ SWOJE DANE PONIŻEJ
         const SUPABASE_URL = 'https://wkztgtxkyvknkproapdy.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndrenRndHhreXZrbmtwcm9hcGR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMTcwMzYsImV4cCI6MjA5OTg5MzAzNn0.cLwc-HEUmiduUatThWu92gfsCsqo0_mGEkdv5N2WctM';
         
+        // Inicjalizacja
         const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         const statusDiv = document.getElementById('status');
         const chatDiv = document.getElementById('chat');
 
-        async function testPolaczenia() {
+        async function pobierzDane() {
             try {
-                const { data, error } = await supabase.from('chat').select('*').limit(1);
-                
+                // Próba pobrania danych
+                const { data, error } = await supabase
+                    .from('chat')
+                    .select('*')
+                    .order('id', { ascending: false })
+                    .limit(5);
+
                 if (error) {
                     statusDiv.innerText = "BŁĄD: " + error.message;
+                    console.error(error);
                 } else {
-                    statusDiv.innerText = "Połączono! Dane w bazie: " + data.length;
-                    // Jeśli dane są, pokaż je
-                    chatDiv.innerText = JSON.stringify(data);
+                    statusDiv.innerText = "Połączono! Ostatnie wiadomości:";
+                    chatDiv.innerHTML = ""; // Czyścimy stare
+                    data.forEach(row => {
+                        const p = document.createElement('p');
+                        p.innerText = row.text; // Zakładam, że kolumna z tekstem nazywa się 'text'
+                        chatDiv.appendChild(p);
+                    });
                 }
             } catch (err) {
-                statusDiv.innerText = "Błąd krytyczny: " + err;
+                statusDiv.innerText = "Błąd krytyczny: " + err.message;
             }
         }
 
-        testPolaczenia();
+        // Uruchomienie
+        pobierzDane();
     </script>
 </body>
 </html>
