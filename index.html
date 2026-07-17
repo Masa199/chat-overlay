@@ -1,39 +1,42 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Live Chat Overlay</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: transparent; font-family: sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; padding: 10px; }
-        #chat { display: flex; flex-direction: column; gap: 6px; height: 100%; overflow-y: scroll; scrollbar-width: none; }
-        #chat::-webkit-scrollbar { display: none; }
-        .message { background: rgba(0, 0, 0, 0.75); padding: 8px 14px; border-radius: 10px; border-left: 4px solid #00d4ff; animation: fadeIn 0.25s ease forwards; color: #ffffff; font-size: 20px; margin-bottom: 5px; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
-</head>
-<body>
-    <div id="chat"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+    // Wpisz tu swoje dane
+    const SUPABASE_URL = 'https://wkztgtxkyvknkproapdy.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndrenRndHhreXZrbmtwcm9hcGR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMTcwMzYsImV4cCI6MjA5OTg5MzAzNn0.cLwc-HEUmiduUatThWu92gfsCsqo0_mGEkdv5N2WctM';
+    
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const chatDiv = document.getElementById('chat');
+    
+    // Zmienna do zapamiętywania ostatniego wiersza
+    let lastId = 0;
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        const SUPABASE_URL = 'https://wkztgtxkyvknkproapdy.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndrenRndHhreXZrbmtwcm9hcGR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMTcwMzYsImV4cCI6MjA5OTg5MzAzNn0.cLwc-HEUmiduUatThWu92gfsCsqo0_mGEkdv5N2WctM';
-        
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        const chatDiv = document.getElementById('chat');
+    async function checkNewMessages() {
+        try {
+            // Pobieramy ostatni wpis z bazy
+            const { data, error } = await supabase
+                .from('chat')
+                .select('*')
+                .order('id', { ascending: false })
+                .limit(1);
 
-        // Nasłuchiwanie zmian w tabeli 'chat'
-        supabase.channel('public:chat')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat' }, payload => {
-                const div = document.createElement('div');
-                div.className = 'message';
-                div.textContent = payload.new.text;
-                chatDiv.appendChild(div);
-                chatDiv.scrollTop = chatDiv.scrollHeight;
-                if (chatDiv.children.length > 50) chatDiv.removeChild(chatDiv.firstChild);
-            })
-            .subscribe();
-    </script>
-</body>
-</html>
+            if (data && data.length > 0) {
+                const latest = data[0];
+                
+                // Jeśli ID w bazie jest większe niż to, które mamy, to znaczy, że jest coś nowego
+                if (latest.id > lastId) {
+                    lastId = latest.id;
+                    const div = document.createElement('div');
+                    div.className = 'message';
+                    div.textContent = latest.text;
+                    chatDiv.appendChild(div);
+                    chatDiv.scrollTop = chatDiv.scrollHeight;
+                }
+            }
+        } catch (e) {
+            console.error("Błąd odczytu:", e);
+        }
+    }
+
+    // Uruchamiamy sprawdzanie co 2 sekundy
+    setInterval(checkNewMessages, 2000);
+</script>
