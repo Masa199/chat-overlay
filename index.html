@@ -3,6 +3,13 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <meta charset="UTF-8">
     <title>Czat Supabase</title>
+    <style>
+        /* TU ZMIENIAMY WYGLĄD */
+        body { font-family: sans-serif; max-width: 500px; margin: 20px auto; }
+        #chat { border: 1px solid #ddd; height: 400px; overflow-y: scroll; padding: 15px; border-radius: 8px; background: #f9f9f9; }
+        .message { padding: 8px; margin-bottom: 8px; background: white; border-radius: 5px; border: 1px solid #eee; }
+        #status { margin-bottom: 10px; color: #666; font-size: 0.9em; }
+    </style>
 </head>
 <body>
 
@@ -10,43 +17,32 @@
     <div id="chat"></div>
 
     <script>
-        // 1. WPISZ SWOJE DANE PONIŻEJ
         const SUPABASE_URL = 'https://wkztgtxkyvknkproapdy.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndrenRndHhreXZrbmtwcm9hcGR5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMTcwMzYsImV4cCI6MjA5OTg5MzAzNn0.cLwc-HEUmiduUatThWu92gfsCsqo0_mGEkdv5N2WctM';
         
-        // 2. Inicjalizacja z nazwą 'sbClient' (żeby nie było błędu z nazwą)
         const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        
         const statusDiv = document.getElementById('status');
         const chatDiv = document.getElementById('chat');
 
         async function pobierzDane() {
-            try {
-                // 3. Używamy 'sbClient' zamiast 'supabase'
-                const { data, error } = await sbClient
-                    .from('chat')
-                    .select('*')
-                    .order('id', { ascending: false })
-                    .limit(5);
+            const { data, error } = await sbClient
+                .from('chat')
+                .select('*')
+                .order('id', { ascending: false })
+                .limit(20);
 
-                if (error) {
-                    statusDiv.innerText = "BŁĄD: " + error.message;
-                    console.error("Szczegóły błędu:", error);
-                } else {
-                    statusDiv.innerText = "Połączono! Ostatnie wiadomości:";
-                    chatDiv.innerHTML = ""; 
-                    if (data && data.length > 0) {
-                        data.forEach(row => {
-                            const p = document.createElement('p');
-                            p.innerText = row.text;
-                            chatDiv.appendChild(p);
-                        });
-                    } else {
-                        statusDiv.innerText = "Połączono, ale tabela jest pusta.";
-                    }
-                }
-            } catch (err) {
-                statusDiv.innerText = "Błąd krytyczny: " + err.message;
+            if (error) {
+                statusDiv.innerText = "BŁĄD: " + error.message;
+            } else {
+                statusDiv.innerText = "Twoje wiadomości:";
+                chatDiv.innerHTML = ""; 
+                data.reverse().forEach(row => {
+                    const p = document.createElement('div');
+                    p.className = 'message';
+                    p.innerText = row.text;
+                    chatDiv.appendChild(p);
+                });
+                chatDiv.scrollTop = chatDiv.scrollHeight;
             }
         }
 
